@@ -249,12 +249,16 @@ public:
 					{
 						State = StateEnum::WaitingForPacketClear;
 #if defined(PIM_USE_STATIC_CALLBACK)
+#if !defined(PIM_NO_CHECKS)
 						if (ReceiveCallback != nullptr)
+#endif
 						{
 							ReceiveCallback(PacketStartTimestamp);
 						}
 #else
+#if !defined(PIM_NO_CHECKS)
 						if (Callback != nullptr)
+#endif
 						{
 							Callback->OnPacketReceived(PacketStartTimestamp);
 						}
@@ -279,12 +283,16 @@ public:
 
 				// Let the Driver know we dropped a packet.
 #if defined(PIM_USE_STATIC_CALLBACK)
+#if !defined(PIM_NO_CHECKS)
 				if (LostCallback != nullptr)
+#endif
 				{
 					LostCallback(BitTimestamp);
 				}
 #else
+#if !defined(PIM_NO_CHECKS)
 				if (Callback != nullptr)
+#endif
 				{
 					Callback->OnPacketLost(BitTimestamp);
 				}

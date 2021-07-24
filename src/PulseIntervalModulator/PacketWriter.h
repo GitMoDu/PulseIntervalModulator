@@ -85,7 +85,9 @@ public:
 		{
 		case WriteState::Done:
 			// Last pulse is out.
+#if !defined(PIM_NO_CHECKS)
 			if (Callback != nullptr)
+#endif
 			{
 #if defined(PIM_USE_STATIC_CALLBACK)
 				Callback();
