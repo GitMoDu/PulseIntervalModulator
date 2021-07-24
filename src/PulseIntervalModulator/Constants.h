@@ -53,29 +53,6 @@ public:
 		return false;
 	}
 
-	static const bool EncodeBit(const uint32_t pulseSeparation, bool& bit)
-	{
-		if (pulseSeparation < OneIntervalMax)
-		{
-			if (pulseSeparation > OneIntervalMin) {
-				bit = true;
-				return true;
-			}
-			else if (pulseSeparation > ZeroIntervalMin)
-			{
-				bit = false;
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	static const bool ValidatePreamble(const uint32_t pulseDuration)
-	{
-		return (pulseDuration < PreambleIntervalMax) &&
-			(pulseDuration > PreambleIntervalMin);
-	}
 };
 
 #endif
