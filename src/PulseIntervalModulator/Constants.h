@@ -8,14 +8,18 @@
 // Enable use of static callbacks, instead of interface.
 // #define PIM_USE_STATIC_CALLBACK
 
-class Constants {
+// Remove checks for a faster operation, once flow is validated.
+// #define PIM_NO_CHECKS
+
+class Constants 
+{
 public:
 
-	static const uint8_t MinDataBytes = 1; // 0b00000
-	static const uint8_t MaxDataBytes = 64; // 0b11111 + 1
+	static const uint8_t MinDataBytes = 1; // 0b000000
+	static const uint8_t MaxDataBytes = 64; // 0b111111 + 1
 	static const uint8_t HeaderBits = 6;
 
-	// All times in micro-seconds.
+	// All intervals in micro-seconds.
 	static const uint32_t PreambleInterval = 100;
 	static const uint32_t ZeroInterval = 50;
 	static const uint32_t OneInterval = 75;
