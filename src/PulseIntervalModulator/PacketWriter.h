@@ -96,8 +96,6 @@ public:
 			InterruptTimerWrapper::DetachInterrupt();
 			break;
 		case WriteState::WritingHeader:
-			// PreAmble pause has ended.
-
 			// Sending header with packet size MSB first.
 			// Remove MinDataBytes, according to specification.
 			if ((PacketSize - Constants::MinDataBytes) & (1 << (Constants::HeaderBits - 1 - RawOutputBit)))
@@ -154,14 +152,15 @@ private:
 	}
 
 public:
-	// Returns true on success.
 	// packetData must not be a valid array.
-	const bool SendPacket(uint8_t* packetData, const uint8_t packetSize)
+	void SendPacket(uint8_t* packetData, const uint8_t packetSize)
 	{
-		if (packetSize > MaxDataBytes || packetSize < Constants::MinDataBytes)
+#if !defined(PIM_NO_CHECKS)
+		if (packetData == nullptr || packetSize > MaxDataBytes || packetSize < Constants::MinDataBytes)
 		{
-			return false;
+			return;
 		}
+#endif 
 		RawOutputData = packetData;
 
 		PacketSize = packetSize;
@@ -173,8 +172,6 @@ public:
 		State = WriteState::WritingHeader;
 		PulseOut();
 		InterruptTimerWrapper::InterruptAfterPreamble();
-
-		return true;
 	}
 };
 #endif
