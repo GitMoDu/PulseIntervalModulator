@@ -3,9 +3,10 @@
 //
 
 
-
 #define DEBUG_LOG
-#include <PulseIntervalEncoding.h>
+#define PIM_USE_STATIC_CALLBACK
+
+#include <PulseIntervalModulator.h>
 
 const uint8_t WritePin = 7;
 const uint8_t BufferSize = 1;

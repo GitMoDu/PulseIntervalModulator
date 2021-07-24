@@ -2,9 +2,11 @@
 // Example of Receiver only with Reader.
 //
 
-#include <PulseIntervalEncoding.h>
 
 #define DEBUG_LOG
+#define PIM_USE_STATIC_CALLBACK
+
+#include <PulseIntervalModulator.h>
 
 const uint8_t ReadPin = 2;
 const uint8_t BufferSize = 64;
@@ -13,11 +15,9 @@ PacketReader<BufferSize> Reader(ReadPin);
 
 volatile bool PacketLostFlag = false;
 volatile bool PacketReceivedFlag = false;
-
 uint8_t Buffer[BufferSize];
-
-
 volatile uint32_t IncomingStartTimestamp = 0;
+
 
 void setup()
 {
