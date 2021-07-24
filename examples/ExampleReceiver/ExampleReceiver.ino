@@ -10,12 +10,12 @@
 
 const uint8_t ReadPin = 2;
 const uint8_t BufferSize = 64;
+uint8_t IncomingBuffer[BufferSize];
 
-PacketReader<BufferSize> Reader(ReadPin);
+PacketReader<BufferSize, ReadPin> Reader(IncomingBuffer);
 
 volatile bool PacketLostFlag = false;
 volatile bool PacketReceivedFlag = false;
-uint8_t Buffer[BufferSize];
 volatile uint32_t IncomingStartTimestamp = 0;
 
 
@@ -25,13 +25,12 @@ void setup()
 	Serial.begin(115200);
 #endif
 
-
 	// Attach interrupt before starting.
 	attachInterrupt(digitalPinToInterrupt(ReadPin), OnReaderPulse, RISING);
 	Reader.Start(OnPacketReceived, OnPacketLost);
 
 #ifdef DEBUG_LOG
-	Serial.println(F("Tester Receiver Start."));
+	Serial.println(F("ExampleReceiver Start."));
 #endif
 }
 
@@ -50,34 +49,28 @@ void loop()
 	{
 		PacketReceivedFlag = false;
 
-		uint8_t incomingSize = 0;
-		if (Reader.GetIncoming(Buffer, incomingSize))
-		{
-			// When packet is available.
+		uint8_t incomingSize = Reader.GetIncomingSize();
+
+		// When packet is available.
 #ifdef DEBUG_LOG
-			Serial.print(F("OnPacketReceived @"));
-			Serial.print(IncomingStartTimestamp);
-			Serial.print(F(" us ("));
-			Serial.print(incomingSize);
-			Serial.println(F(") bytes"));
+		Serial.print(F("OnPacketReceived @"));
+		Serial.print(IncomingStartTimestamp);
+		Serial.print(F(" us ("));
+		Serial.print(incomingSize);
+		Serial.println(F(") bytes"));
 
-			Serial.print(F("Data: "));
-			for (uint8_t i = 0; i < incomingSize; i++)
-			{
-				Serial.print("|");
-				Serial.print(Buffer[i], HEX);
-			}
-			Serial.println('|');
-			Serial.println();
-#endif
+		Serial.print(F("Data: "));
+		for (uint8_t i = 0; i < incomingSize; i++)
+		{
+			Serial.print("|");
+			Serial.print(IncomingBuffer[i], HEX);
 		}
+		Serial.println('|');
+		Serial.println();
+#endif
 
-		// Restore receiver after consuming the packet.
-		Reader.Start();
-	}
-	else
-	{
-		//Reader.CheckForStuckPacket();
+		// Restore Reader after consuming the packet.
+		Reader.Restore();
 	}
 }
 
@@ -92,6 +85,7 @@ void OnPacketLost(const uint32_t packetStartTimestamp)
 	PacketLostFlag = true;
 	IncomingStartTimestamp = packetStartTimestamp;
 }
+
 void OnReaderPulse()
 {
 	Reader.OnPulse();

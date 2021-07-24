@@ -11,7 +11,7 @@
 const uint8_t WritePin = 7;
 const uint8_t BufferSize = 1;
 
-PacketWriter<BufferSize> Writer(WritePin);
+PacketWriter<BufferSize, WritePin> Writer;
 
 volatile bool PacketSentFlag = false;
 uint8_t BufferOut[BufferSize];
@@ -21,7 +21,6 @@ uint32_t LastSent = 0;
 
 void setup()
 {
-	pinMode(3, OUTPUT);
 #ifdef DEBUG_LOG
 	Serial.begin(115200);
 #endif
@@ -35,7 +34,7 @@ void setup()
 	Writer.Start(OnPacketSentInterrupt);
 
 #ifdef DEBUG_LOG
-	Serial.println(F("Tester Receiver Start."));
+	Serial.println(F("ExampleSender Start."));
 #endif
 }
 
@@ -43,8 +42,8 @@ void loop()
 {
 	if (PacketSentFlag)
 	{
-		digitalWrite(3, LOW);
 		PacketSentFlag = false;
+
 #ifdef DEBUG_LOG
 		Serial.print(F("OnPacketSent @"));
 		Serial.print(micros());
@@ -54,13 +53,13 @@ void loop()
 	else if (millis() - LastSent > SendPeriodMillis)
 	{
 		LastSent = millis();
+
 #ifdef DEBUG_LOG
 		Serial.print(F("Sending Packet @"));
 		Serial.print(micros());
 		Serial.println(F(" us"));
 #endif
 
-		digitalWrite(3, HIGH);
 		Writer.SendPacket(BufferOut, BufferSize);
 	}
 }
