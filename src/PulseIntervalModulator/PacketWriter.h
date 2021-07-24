@@ -3,8 +3,6 @@
 // Channel B is still free.
 // Does not affect millis(), micros() or delay().
 // All work is done during interrupts.
-// On AVR, each instance uses ~30 bytes + BufferSize.
-
 #ifndef _PIM_PACKET_WRITER_h
 #define _PIM_PACKET_WRITER_h
 
@@ -26,7 +24,7 @@ public:
 };
 #endif 
 
-template<const uint8_t MaxDataBytes>
+template<const uint8_t MaxDataBytes, const uint8_t WritePin>
 class PacketWriter
 {
 private:
@@ -54,8 +52,8 @@ private:
 
 
 public:
-	PacketWriter(const uint8_t outPin)
-		: PinOut(outPin, false)
+	PacketWriter()
+		: PinOut(WritePin, false)
 	{}
 
 #if defined(PIM_USE_STATIC_CALLBACK)

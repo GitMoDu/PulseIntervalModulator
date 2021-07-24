@@ -20,11 +20,11 @@ public:
 };
 #endif 
 
-template<const uint8_t MaxDataBytes>
+template<const uint8_t MaxDataBytes, const uint8_t ReadPin>
 class PacketReader
 {
 private:
-	uint8_t IncomingBuffer[MaxDataBytes];
+	uint8_t* IncomingBuffer = nullptr;
 	uint8_t IncomingIndex = 0;
 	volatile uint8_t IncomingSize = 0;
 
@@ -36,6 +36,7 @@ private:
 	enum StateEnum
 	{
 		Blanking,
+		BlankingWithPendingPacket,
 		WaitingForPreAmbleStart,
 		WaitingForPreAmbleEnd,
 		WaitingForHeaderEnd,
@@ -52,12 +53,9 @@ private:
 	PacketReaderCallback* Callback = nullptr;
 #endif
 
-
-	const uint8_t ReadPin;
-
 public:
-	PacketReader(const uint8_t readPin)
-		: ReadPin(readPin)
+	PacketReader(uint8_t* incomingBuffer)
+		: IncomingBuffer(incomingBuffer)
 	{
 		pinMode(ReadPin, INPUT);
 	}
@@ -84,6 +82,34 @@ public:
 	void Start()
 	{
 		State = StateEnum::WaitingForPreAmbleStart;
+
+		// Make sure we don't return a previous size after it's been cleared.
+		IncomingSize = 0;
+	}
+
+	// Called after blanking or after consuming packet after OnPacketReceived.
+	void Restore()
+	{
+		switch (State)
+		{
+		case StateEnum::Blanking:
+			Start();
+			break;
+		case StateEnum::BlankingWithPendingPacket:
+			if (IncomingSize > 0)
+			{
+				State = StateEnum::WaitingForPacketClear;
+			}
+			else
+			{
+				State = StateEnum::WaitingForPreAmbleStart;
+			}
+		case StateEnum::WaitingForPacketClear:
+			Start();
+			break;
+		default:
+			break;
+		}
 	}
 
 	void Stop()
@@ -92,60 +118,16 @@ public:
 		BlankReceive();
 	}
 
-	// Extra check to be called from the loop.
-	void CheckForStuckPacket()
-	{
-		if (State == StateEnum::WaitingForDataBits &&
-			(micros() - PacketStartTimestamp) > Constants::PacketTimeoutMicros)
-		{
-			// Stuck packet detected, restarting.
-			Start();
-		}
-	}
-
-	// Returns true if in the middle of receiving a packet.
-	// Returns false if it is otherwise safe to transmit.
-	const bool IsBusy()
-	{
-		switch (State)
-		{
-		case StateEnum::Blanking:
-			return false;
-		case StateEnum::WaitingForPreAmbleStart:
-			return false;
-		case StateEnum::WaitingForPreAmbleEnd:
-			return true;
-		case StateEnum::WaitingForHeaderEnd:
-			return true;
-		case StateEnum::WaitingForDataBits:
-			return true;
-		case StateEnum::WaitingForPacketClear:
-			return false;
-		default:
-			return false;
-		}
-	}
-
+	// Blank receiving during 
 	void BlankReceive()
 	{
-		State = StateEnum::Blanking;
-	}
-
-	const bool GetIncoming(uint8_t* rawPacket, uint8_t& length)
-	{
-		if (State == StateEnum::WaitingForPacketClear && IncomingSize > 0)
+		if (State == StateEnum::WaitingForPacketClear)
 		{
-			length = IncomingSize;
-			for (uint8_t i = 0; i < length; i++)
-			{
-				rawPacket[i] = IncomingBuffer[i];
-			}
-
-			return true;
+			State = StateEnum::BlankingWithPendingPacket;
 		}
 		else
 		{
-			return false;
+			State = StateEnum::Blanking;
 		}
 	}
 
@@ -156,10 +138,11 @@ public:
 		switch (State)
 		{
 		case StateEnum::Blanking:
+		case StateEnum::BlankingWithPendingPacket:
+		case StateEnum::WaitingForPacketClear:
 			// Ignore.
 			break;
 		case StateEnum::WaitingForPreAmbleStart:
-
 			PacketStartTimestamp = timestamp;
 			State = StateEnum::WaitingForPreAmbleEnd;
 			break;
