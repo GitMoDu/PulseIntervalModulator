@@ -14,7 +14,7 @@ const uint8_t BufferSize = 1;
 PacketWriter<BufferSize, WritePin> Writer;
 
 volatile bool PacketSentFlag = false;
-uint8_t BufferOut[BufferSize];
+uint8_t OutgoingPacket[BufferSize];
 const uint32_t SendPeriodMillis = 500;
 uint32_t LastSent = 0;
 
@@ -24,12 +24,6 @@ void setup()
 #ifdef DEBUG_LOG
 	Serial.begin(115200);
 #endif
-
-	// Fill in test data.
-	for (uint8_t i = 0; i < BufferSize; i++)
-	{
-		BufferOut[i] = i + 1;
-	}
 
 	Writer.Start(OnPacketSentInterrupt);
 
@@ -60,7 +54,12 @@ void loop()
 		Serial.println(F(" us"));
 #endif
 
-		Writer.SendPacket(BufferOut, BufferSize);
+		// Fill in test data.
+		for (uint8_t i = 0; i < BufferSize; i++)
+		{
+			OutgoingPacket[i] = i + 1;
+		}
+		Writer.SendPacket(OutgoingPacket, BufferSize);
 	}
 }
 
