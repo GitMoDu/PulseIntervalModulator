@@ -13,7 +13,6 @@ private:
 	volatile bool PacketReceivedFlag = false;
 	volatile bool PacketSentFlag = false;
 
-	uint8_t IncomingPacketSize = 0;
 	uint32_t IncomingStartTimestamp = 0;
 	uint8_t IncomingPacket[Constants::MaxDataBytes];
 

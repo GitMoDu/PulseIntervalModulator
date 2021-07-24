@@ -20,9 +20,6 @@ public:
 	static const uint32_t ZeroInterval = 50;
 	static const uint32_t OneInterval = 75;
 
-	// A 64 byte packet takes around ~26ms, pre amble included.
-	static const uint32_t PacketTimeoutMicros = 30000;
-
 	static const uint8_t IntervalTolerance = 14;
 
 	static const uint32_t ZeroIntervalMin = ZeroInterval - IntervalTolerance;
