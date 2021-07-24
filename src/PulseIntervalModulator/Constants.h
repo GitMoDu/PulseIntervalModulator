@@ -8,25 +8,6 @@
 // Enable use of static callbacks, instead of interface.
 // #define PIM_USE_STATIC_CALLBACK
 
-
-#ifndef PIM_USE_STATIC_CALLBACK
-class PacketWriterCallback
-{
-public:
-	virtual void OnPacketSent() {}
-};
-
-
-class PacketReaderCallback
-{
-public:
-	// After the callback, the buffer is considered free for the next incoming packet.
-	virtual void OnPacketReceived(const uint32_t packetStartTimestamp) {}
-
-	virtual void OnPacketLost(const uint32_t packetStartTimestamp) {}
-};
-#endif 
-
 class Constants {
 public:
 

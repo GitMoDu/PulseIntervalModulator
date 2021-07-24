@@ -18,6 +18,14 @@
 #include "InterruptTimerWrapper.h"
 #include <Fast.h>
 
+#ifndef PIM_USE_STATIC_CALLBACK
+class PacketWriterCallback
+{
+public:
+	virtual void OnPacketSent() {}
+};
+#endif 
+
 template<const uint8_t MaxDataBytes>
 class PacketWriter
 {

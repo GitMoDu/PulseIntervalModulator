@@ -9,6 +9,17 @@
 #include "Constants.h"
 #include <Fast.h>
 
+#ifndef PIM_USE_STATIC_CALLBACK
+class PacketReaderCallback
+{
+public:
+	// After the callback, the buffer is considered free for the next incoming packet.
+	virtual void OnPacketReceived(const uint32_t packetStartTimestamp) {}
+
+	virtual void OnPacketLost(const uint32_t packetStartTimestamp) {}
+};
+#endif 
+
 template<const uint8_t MaxDataBytes>
 class PacketReader
 {
