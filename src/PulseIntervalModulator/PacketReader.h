@@ -153,14 +153,11 @@ public:
 	{
 		switch (State)
 		{
-		case StateEnum::WaitingForPreAmbleStart:
-		case StateEnum::WaitingForPreAmbleEnd:
-		case StateEnum::WaitingForHeaderEnd:
-		case StateEnum::WaitingForDataBits:
-		case StateEnum::WaitingForPacketClear:
-			return micros() - LastTimeStamp > silenceInterval;
-		default:
+		case StateEnum::Blanking:
+		case StateEnum::BlankingWithPendingPacket:
 			return false;
+		default:
+			return micros() - LastTimeStamp > silenceInterval;
 		}
 	}
 
