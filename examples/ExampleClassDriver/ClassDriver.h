@@ -1,7 +1,7 @@
-// ExampleDriverClass.h
+// ClassDriver.h
 
-#ifndef _EXAMPLEDRIVERCLASS_h
-#define _EXAMPLEDRIVERCLASS_h
+#ifndef _CLASS_DRIVER_h
+#define _CLASS_DRIVER_h
 
 #include <PulseIntervalModulator.h>
 
