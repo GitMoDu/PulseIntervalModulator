@@ -177,7 +177,7 @@ public:
 			State = StateEnum::WaitingForPreAmbleEnd;
 			break;
 		case StateEnum::WaitingForPreAmbleEnd:
-			if (Constants::ValidatePreamble(LastTimeStamp - PacketStartTimestamp))
+			if (ValidatePreamble(LastTimeStamp - PacketStartTimestamp))
 			{
 				// Preamble header detected.
 				BitTimestamp = LastTimeStamp;
@@ -197,7 +197,7 @@ public:
 			}
 			break;
 		case StateEnum::WaitingForHeaderEnd:
-			if (Constants::DecodeBit(LastTimeStamp - BitTimestamp, bit))
+			if (DecodeBit(LastTimeStamp - BitTimestamp, bit))
 			{
 				BitTimestamp = LastTimeStamp;
 
@@ -233,7 +233,7 @@ public:
 			}
 			break;
 		case StateEnum::WaitingForDataBits:
-			if (Constants::DecodeBit(LastTimeStamp - BitTimestamp, bit))
+			if (DecodeBit(LastTimeStamp - BitTimestamp, bit))
 			{
 				BitTimestamp = LastTimeStamp;
 
@@ -294,6 +294,32 @@ public:
 		default:
 			break;
 		}
+	}
+
+private:
+	const bool ValidatePreamble(const uint32_t pulseDuration)
+	{
+		return (pulseDuration < Constants::PreambleIntervalMax) &&
+			(pulseDuration > Constants::PreambleIntervalMin);
+	}
+
+	const bool DecodeBit(const uint32_t pulseSeparation, bool& bit)
+	{
+		if (pulseSeparation < Constants::OneIntervalMax)
+		{
+			if (pulseSeparation > Constants::OneIntervalMin) {
+				bit = true;
+				return true;
+			}
+			else if (pulseSeparation > Constants::ZeroIntervalMin)
+			{
+				bit = false;
+				return true;
+			}
+		}
+
+		// Invalid bit pulse interval.
+		return false;
 	}
 };
 #endif

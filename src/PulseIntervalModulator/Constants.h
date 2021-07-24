@@ -34,25 +34,6 @@ public:
 
 	static const uint32_t PreambleIntervalMin = PreambleInterval - IntervalTolerance;
 	static const uint32_t PreambleIntervalMax = PreambleInterval + IntervalTolerance;
-
-	static const bool DecodeBit(const uint32_t pulseSeparation, bool& bit)
-	{
-		if (pulseSeparation < OneIntervalMax)
-		{
-			if (pulseSeparation > OneIntervalMin) {
-				bit = true;
-				return true;
-			}
-			else if (pulseSeparation > ZeroIntervalMin)
-			{
-				bit = false;
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 };
 
 #endif
