@@ -6,7 +6,7 @@
 #include <PulseIntervalModulator.h>
 
 template<const uint8_t MaxPacketSize, const uint8_t ReadPin, const uint8_t WritePin>
-class ExampleDriverClass : virtual public PacketReaderCallback, virtual public PacketWriterCallback
+class ClassDriver : virtual public PacketReaderCallback, virtual public PacketWriterCallback
 {
 private:
 	volatile bool PacketLostFlag = false;
@@ -24,7 +24,7 @@ public:
 	uint8_t OutgoingPacket[MaxPacketSize];
 
 public:
-	ExampleDriverClass()
+	ClassDriver()
 		: PacketReaderCallback()
 		, PacketWriterCallback()
 		, Reader(IncomingPacket)
@@ -60,7 +60,7 @@ public:
 	{
 		// Blank reader to ignore cross-talk.
 		Reader.BlankReceive();
-		Writer.SendPacket(BufferOut, packetSize);
+		Writer.SendPacket(OutgoingPacket, packetSize);
 	}
 
 	void Check()

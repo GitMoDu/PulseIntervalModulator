@@ -5,14 +5,14 @@
 
 #define DEBUG_LOG
 
-#include "ExampleDriverClass.h"
+#include "ClassDriver.h"
 
 const uint8_t MaxPacketSize = 8;
 const uint8_t TestPacketSize = 8;
 const uint8_t ReadPin = 2;
 const uint8_t WritePin = 7;
 
-ExampleDriverClass<MaxPacketSize, ReadPin, WritePin> Driver;
+ClassDriver<MaxPacketSize, ReadPin, WritePin> Driver;
 
 const uint32_t SendPeriodMillis = 500;
 uint32_t LastSent = 0;
