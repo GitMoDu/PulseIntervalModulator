@@ -11,12 +11,10 @@
 const uint8_t WritePin = 7;
 const uint8_t BufferSize = 1;
 
-uint8_t BufferOut[BufferSize];
-
-volatile bool PacketSentFlag = false;
-
 PacketWriter<BufferSize> Writer(WritePin);
 
+volatile bool PacketSentFlag = false;
+uint8_t BufferOut[BufferSize];
 const uint32_t SendPeriodMillis = 500;
 uint32_t LastSent = 0;
 
