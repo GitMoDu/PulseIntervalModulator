@@ -131,6 +131,20 @@ public:
 		}
 	}
 
+	const bool HasIncoming(uint8_t& incomingSize)
+	{
+		switch (State)
+		{
+		case StateEnum::BlankingWithPendingPacket:
+		case StateEnum::WaitingForPacketClear:
+			incomingSize = IncomingSize;
+			return incomingSize > 0;
+			break;
+		default:
+			return false;
+		}
+	}
+
 	void OnPulse()
 	{
 		uint32_t timestamp = micros();

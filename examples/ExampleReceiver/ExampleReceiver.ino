@@ -49,25 +49,28 @@ void loop()
 	{
 		PacketReceivedFlag = false;
 
-		uint8_t incomingSize = Reader.GetIncomingSize();
+		uint8_t incomingSize = 0;
 
-		// When packet is available.
-#ifdef DEBUG_LOG
-		Serial.print(F("OnPacketReceived @"));
-		Serial.print(IncomingStartTimestamp);
-		Serial.print(F(" us ("));
-		Serial.print(incomingSize);
-		Serial.println(F(") bytes"));
-
-		Serial.print(F("Data: "));
-		for (uint8_t i = 0; i < incomingSize; i++)
+		if (Reader.HasIncoming(incomingSize))
 		{
-			Serial.print("|");
-			Serial.print(IncomingBuffer[i], HEX);
-		}
-		Serial.println('|');
-		Serial.println();
+			// When packet is available.
+#ifdef DEBUG_LOG
+			Serial.print(F("OnPacketReceived @"));
+			Serial.print(IncomingStartTimestamp);
+			Serial.print(F(" us ("));
+			Serial.print(incomingSize);
+			Serial.println(F(") bytes"));
+
+			Serial.print(F("Data: "));
+			for (uint8_t i = 0; i < incomingSize; i++)
+			{
+				Serial.print("|");
+				Serial.print(IncomingBuffer[i], HEX);
+			}
+			Serial.println('|');
+			Serial.println();
 #endif
+		}
 
 		// Restore Reader after consuming the packet.
 		Reader.Restore();
