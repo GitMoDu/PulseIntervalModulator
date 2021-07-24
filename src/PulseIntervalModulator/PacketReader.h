@@ -33,6 +33,8 @@ private:
 	volatile uint32_t PacketStartTimestamp = 0;
 	uint32_t BitTimestamp = 0;
 
+	volatile uint32_t LastTimeStamp = 0;
+
 	enum StateEnum
 	{
 		Blanking,
@@ -145,9 +147,26 @@ public:
 		}
 	}
 
+	// Returns false if in the middle of receiving a packet.
+	// Returns true the minimum silenceInterval has been observed.
+	const bool CanSend(const uint32_t silenceInterval)
+	{
+		switch (State)
+		{
+		case StateEnum::WaitingForPreAmbleStart:
+		case StateEnum::WaitingForPreAmbleEnd:
+		case StateEnum::WaitingForHeaderEnd:
+		case StateEnum::WaitingForDataBits:
+		case StateEnum::WaitingForPacketClear:
+			return micros() - LastTimeStamp > silenceInterval;
+		default:
+			return false;
+		}
+	}
+
 	void OnPulse()
 	{
-		uint32_t timestamp = micros();
+		LastTimeStamp = micros();
 		bool bit = false;
 		switch (State)
 		{
@@ -157,14 +176,14 @@ public:
 			// Ignore.
 			break;
 		case StateEnum::WaitingForPreAmbleStart:
-			PacketStartTimestamp = timestamp;
+			PacketStartTimestamp = LastTimeStamp;
 			State = StateEnum::WaitingForPreAmbleEnd;
 			break;
 		case StateEnum::WaitingForPreAmbleEnd:
-			if (Constants::ValidatePreamble(timestamp - PacketStartTimestamp))
+			if (Constants::ValidatePreamble(LastTimeStamp - PacketStartTimestamp))
 			{
 				// Preamble header detected.
-				BitTimestamp = timestamp;
+				BitTimestamp = LastTimeStamp;
 
 				// Take this time to reset the incoming buffer.
 				IncomingIndex = 0;
@@ -176,14 +195,14 @@ public:
 			else
 			{
 				// Restart assuming the last pulse was a start pulse.
-				PacketStartTimestamp = timestamp;
+				PacketStartTimestamp = LastTimeStamp;
 				State = StateEnum::WaitingForPreAmbleEnd;
 			}
 			break;
 		case StateEnum::WaitingForHeaderEnd:
-			if (Constants::DecodeBit(timestamp - BitTimestamp, bit))
+			if (Constants::DecodeBit(LastTimeStamp - BitTimestamp, bit))
 			{
-				BitTimestamp = timestamp;
+				BitTimestamp = LastTimeStamp;
 
 				// Header bits come in MSB first.
 				IncomingSize += (bit << (Constants::HeaderBits - 1 - BitIndex));
@@ -197,7 +216,7 @@ public:
 					if (IncomingSize > MaxDataBytes) {
 						// Invalid packet size.
 						// Restart assuming the last pulse was a start pulse.
-						PacketStartTimestamp = timestamp;
+						PacketStartTimestamp = LastTimeStamp;
 						State = StateEnum::WaitingForPreAmbleEnd;
 					}
 					else
@@ -212,14 +231,14 @@ public:
 			else
 			{
 				// Restart assuming the last pulse was a start pulse.
-				PacketStartTimestamp = timestamp;
+				PacketStartTimestamp = LastTimeStamp;
 				State = StateEnum::WaitingForPreAmbleEnd;
 			}
 			break;
 		case StateEnum::WaitingForDataBits:
-			if (Constants::DecodeBit(timestamp - BitTimestamp, bit))
+			if (Constants::DecodeBit(LastTimeStamp - BitTimestamp, bit))
 			{
-				BitTimestamp = timestamp;
+				BitTimestamp = LastTimeStamp;
 
 				// Data bits come in MSB.
 				BitBuffer += (bit << (7 - BitIndex));
@@ -258,7 +277,7 @@ public:
 				BitTimestamp = PacketStartTimestamp;
 
 				// Restart assuming the last pulse was a start pulse.
-				PacketStartTimestamp = timestamp;
+				PacketStartTimestamp = LastTimeStamp;
 				State = StateEnum::WaitingForPreAmbleEnd;
 
 				// Let the Driver know we dropped a packet.
