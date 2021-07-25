@@ -9,7 +9,7 @@
 #include <PulseIntervalModulator.h>
 
 const uint8_t WritePin = 7;
-const uint8_t BufferSize = 1;
+const uint8_t BufferSize = 5;
 
 PacketWriter<BufferSize, WritePin> Writer;
 
@@ -55,11 +55,9 @@ void loop()
 #endif
 
 		// Fill in test data.
-		for (uint8_t i = 0; i < BufferSize; i++)
-		{
-			OutgoingPacket[i] = i + 1;
-		}
-		Writer.SendPacket(OutgoingPacket, BufferSize);
+		uint8_t Message[5] = { 'H', 'e','l', 'l', 'o' };
+
+		Writer.SendPacket(Message, 5);
 	}
 }
 
