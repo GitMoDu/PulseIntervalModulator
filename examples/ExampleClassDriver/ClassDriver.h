@@ -14,6 +14,7 @@ private:
 	volatile bool PacketSentFlag = false;
 
 	uint32_t IncomingStartTimestamp = 0;
+	const uint32_t MinimumSilenceInterval = 20000;
 	uint8_t IncomingPacket[Constants::MaxDataBytes];
 
 	PacketReader<MaxPacketSize, ReadPin> Reader;
@@ -51,7 +52,7 @@ public:
 
 	const bool CanSend()
 	{
-		return Reader.CanSend();
+		return Reader.CanSend(MinimumSilenceInterval);
 	}
 
 	// Must check with CanSend() right before this call.
@@ -89,13 +90,10 @@ public:
 				Serial.print(incomingSize);
 				Serial.println(F(") bytes"));
 
-				Serial.print(F("Data: "));
 				for (uint8_t i = 0; i < incomingSize; i++)
 				{
-					Serial.print("|");
-					Serial.print(IncomingPacket[i], HEX);
+					Serial.print((char)IncomingPacket[i]);
 				}
-				Serial.println('|');
 				Serial.println();
 #endif
 			}

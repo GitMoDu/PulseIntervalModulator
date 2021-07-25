@@ -8,7 +8,6 @@
 #include "ClassDriver.h"
 
 const uint8_t MaxPacketSize = 8;
-const uint8_t TestPacketSize = 8;
 const uint8_t ReadPin = 2;
 const uint8_t WritePin = 7;
 
@@ -21,7 +20,7 @@ uint32_t LastSent = 0;
 void setup()
 {
 #ifdef DEBUG_LOG
-	Serial.begin(9600);
+	Serial.begin(115200);
 #endif
 
 	attachInterrupt(digitalPinToInterrupt(ReadPin), OnReaderPulse, RISING);
@@ -36,19 +35,33 @@ void loop()
 {
 	if (millis() - LastSent > SendPeriodMillis)
 	{
-		LastSent = millis();
+		if (Driver.CanSend())
+		{
+			LastSent = millis();
 #ifdef DEBUG_LOG
-		Serial.print(F("Sending Packet @"));
-		Serial.print(micros());
-		Serial.println(F(" us"));
+			Serial.print(F("Sending Packet @"));
+			Serial.print(micros());
+			Serial.println(F(" us"));
 #endif
 
-		// Fill in test data.
-		for (uint8_t i = 0; i < TestPacketSize; i++)
-		{
-			Driver.OutgoingPacket[i] = i + 1;
+			// Fill in test data.
+			uint8_t MessageSize = 0;
+			Driver.OutgoingPacket[MessageSize++] = 'H';
+			Driver.OutgoingPacket[MessageSize++] = 'e';
+			Driver.OutgoingPacket[MessageSize++] = 'l';
+			Driver.OutgoingPacket[MessageSize++] = 'l';
+			Driver.OutgoingPacket[MessageSize++] = 'o';
+
+			Driver.SendPacket(MessageSize);
 		}
-		Driver.SendPacket(TestPacketSize);
+		else
+		{
+#ifdef DEBUG_LOG
+			Serial.print(F("Collision avoided @"));
+			Serial.print(micros());
+			Serial.println(F(" us"));
+#endif
+		}
 	}
 	else
 	{
