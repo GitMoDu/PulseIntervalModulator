@@ -29,7 +29,7 @@ private:
 
 	PulsePacketTaskDriver<MaxPacketSize, ReadPin, WritePin>* PacketDriver = nullptr;
 
-	uint8_t Message[5] = { 'H', 'E', 'L', 'L', 'O' };
+	uint8_t Message[6] = { 'H', 'e', 'l', 'l', 'o', '!'};
 
 public:
 	SenderTask(Scheduler* scheduler, PulsePacketTaskDriver<MaxPacketSize, ReadPin, WritePin>* packetDriver)
@@ -40,7 +40,7 @@ public:
 
 	bool Callback()
 	{
-		PacketDriver->SendPacket(Message, 5);
+		PacketDriver->SendPacket(Message, 6);
 	}
 } SenderTask(&SchedulerBase, &Driver);
 
@@ -48,7 +48,7 @@ public:
 void setup()
 {
 #ifdef DEBUG_LOG
-	Serial.begin(9600);
+	Serial.begin(115200);
 #endif
 
 	attachInterrupt(digitalPinToInterrupt(ReadPin), OnReaderPulse, RISING);

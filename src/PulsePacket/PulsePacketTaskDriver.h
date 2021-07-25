@@ -16,7 +16,7 @@
 #define _TASK_OO_CALLBACKS
 #include <TaskSchedulerDeclarations.h>
 
-template<const uint8_t MaxPacketSize, const uint8_t ReadPin, const uint8_t WritePin>
+template<const uint8_t MaxPacketSize, const uint8_t ReadPin, const uint8_t WritePin, const uint32_t MinimumSilenceInterval = 20000>
 class PulsePacketTaskDriver : private Task, virtual public PacketReaderCallback, virtual public PacketWriterCallback
 {
 private:
@@ -115,7 +115,7 @@ public:
 
 	const bool CanSend()
 	{
-		return Reader.CanSend();
+		return Reader.CanSend(MinimumSilenceInterval);
 	}
 
 	// Must check with CanSend() right before this call.
