@@ -9,7 +9,7 @@
 #include "Constants.h"
 #include <Fast.h>
 
-#ifndef PIM_USE_STATIC_CALLBACK
+#if !defined(PIM_USE_STATIC_CALLBACK)
 class PacketReaderCallback
 {
 public:
@@ -256,14 +256,14 @@ public:
 						Detach();
 						State = StateEnum::WaitingForPacketClear;
 #if defined(PIM_USE_STATIC_CALLBACK)
-#if !defined(PIM_NO_CHECKS)
+#if defined(PIM_SAFETY_CHECKS)
 						if (ReceiveCallback != nullptr)
 #endif
 						{
 							ReceiveCallback(PacketStartTimestamp);
 						}
 #else
-#if !defined(PIM_NO_CHECKS)
+#if defined(PIM_SAFETY_CHECKS)
 						if (Callback != nullptr)
 #endif
 						{
@@ -273,7 +273,6 @@ public:
 					}
 					else
 					{
-						//Serial.println(BitBuffer);
 						BitBuffer = 0;
 						BitIndex = 0;
 					}
@@ -290,14 +289,14 @@ public:
 
 				// Let the Driver know we dropped a packet.
 #if defined(PIM_USE_STATIC_CALLBACK)
-#if !defined(PIM_NO_CHECKS)
+#if defined(PIM_SAFETY_CHECKS)
 				if (LostCallback != nullptr)
 #endif
 				{
 					LostCallback(BitTimestamp);
 				}
 #else
-#if !defined(PIM_NO_CHECKS)
+#if defined(PIM_SAFETY_CHECKS)
 				if (Callback != nullptr)
 #endif
 				{

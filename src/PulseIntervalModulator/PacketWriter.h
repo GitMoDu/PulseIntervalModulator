@@ -17,7 +17,7 @@
 #include "InterruptTimerWrapper.h"
 
 
-#ifndef PIM_USE_STATIC_CALLBACK
+#if !defined(PIM_USE_STATIC_CALLBACK)
 class PacketWriterCallback
 {
 public:
@@ -89,7 +89,7 @@ public:
 		{
 		case WriteState::Done:
 			// Last pulse is out.
-#if !defined(PIM_NO_CHECKS)
+#if defined(PIM_SAFETY_CHECKS)
 			if (Callback != nullptr)
 #endif
 			{
@@ -165,7 +165,7 @@ public:
 	// packetData must not be a valid array.
 	void SendPacket(uint8_t* packetData, const uint8_t packetSize)
 	{
-#if !defined(PIM_NO_CHECKS)
+#if defined(PIM_SAFETY_CHECKS)
 		if (packetData == nullptr || packetSize > MaxDataBytes || packetSize < Constants::MinDataBytes)
 		{
 			return;
