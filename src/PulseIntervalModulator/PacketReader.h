@@ -7,7 +7,8 @@
 #define _PIM_PACKET_READER_h
 
 #include "Constants.h"
-#include <Fast.h>
+#include <Arduino.h>
+
 
 #if !defined(PIM_USE_STATIC_CALLBACK)
 class PacketReaderCallback

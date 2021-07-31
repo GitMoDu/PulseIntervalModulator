@@ -5,14 +5,84 @@
 
 
 
-#if defined(ARDUINO_AVR_ATTINYX5)
-#elif defined(ARDUINO_ARCH_AVR)
+
+#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_STM32F1)
 #else
 #error No timer wrapper implementation .
 #endif	
 
-#include <Arduino.h>
 
+#if defined(ARDUINO_ARCH_STM32F1)
+#include <Arduino.h>
+// This class should re-use the same timer used for the natives "micros()" call.
+class InterruptTimerWrapper
+{
+private:
+	enum InterruptDuration
+	{
+		PreAmble = 10,
+		Zero = 4,
+		One = 7
+	};
+public:
+
+	static void DetachInterrupt()
+	{
+	}
+
+	static void ConfigureTimer()
+	{
+		// Set 
+		noInterrupts();
+
+		interrupts();
+	}
+
+	static void AttachInterrupt()
+	{
+		DetachInterrupt();
+		ConfigureTimer();
+#if defined(ARDUINO_AVR_ATTINYX5)
+		TIMSK &= ~(1 << OCIE0A);
+#elif defined(ARDUINO_ARCH_AVR)
+		TIMSK0 &= ~(1 << OCIE0A);
+#endif
+	}
+
+	static void InterruptAfterOne()
+	{
+		InterruptAfterClocks((uint8_t)InterruptDuration::One);
+	}
+
+	static void InterruptAfterZero()
+	{
+		InterruptAfterClocks((uint8_t)InterruptDuration::Zero);
+	}
+
+	static void InterruptAfterClocks(const uint8_t clocks)
+	{
+#if defined(ARDUINO_AVR_ATTINYX5)
+		// Clear the interrupt flag while we setup the next one.
+
+		// Set the new compare vale.
+
+		// Enable interrupt.
+		// 
+		// Clear the interrupt flag while we setup the next one.
+
+		// Set the new compare vale.
+
+		// Enable interrupt.
+#endif
+	}
+
+	static void InterruptAfterPreamble()
+	{
+		InterruptAfterClocks((uint8_t)InterruptDuration::PreAmble);
+	}
+};
+#else
+#include <Arduino.h>
 // This class should re-use the same timer used for the natives "micros()" call.
 class InterruptTimerWrapper
 {
@@ -132,4 +202,5 @@ public:
 		InterruptAfterClocks((uint8_t)InterruptDuration::PreAmble);
 	}
 };
+#endif
 #endif
