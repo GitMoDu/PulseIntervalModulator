@@ -4,12 +4,11 @@
 #define _INTERRUPT_TIMER_WRAPPER_h
 
 
-
-
 #if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_STM32F1)
 #else
 #error No timer wrapper implementation .
 #endif	
+
 
 
 #if defined(ARDUINO_ARCH_STM32F1)
@@ -81,7 +80,7 @@ public:
 		InterruptAfterClocks((uint8_t)InterruptDuration::PreAmble);
 	}
 };
-#else
+#elif defined(ARDUINO_ARCH_AVR)
 #include <Arduino.h>
 // This class should re-use the same timer used for the natives "micros()" call.
 class InterruptTimerWrapper
