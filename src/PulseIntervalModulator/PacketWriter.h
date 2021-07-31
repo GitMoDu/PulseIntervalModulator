@@ -6,6 +6,7 @@
 #ifndef _PIM_PACKET_WRITER_h
 #define _PIM_PACKET_WRITER_h
 
+#include <Fast.h>
 #if !defined(_FAST_h)
 #error Gotta go fast! (.h)
 #error Arduino general digitalWrite support not included, make a pull request.
@@ -14,7 +15,7 @@
 
 #include "Constants.h"
 #include "InterruptTimerWrapper.h"
-#include <Fast.h>
+
 
 #ifndef PIM_USE_STATIC_CALLBACK
 class PacketWriterCallback
@@ -24,7 +25,6 @@ public:
 };
 #endif 
 
-template<const uint8_t MaxDataBytes, const uint8_t WritePin>
 class PacketWriter
 {
 private:
@@ -50,11 +50,14 @@ private:
 	PacketWriterCallback* Callback = nullptr;
 #endif
 
+	const uint8_t MaxDataBytes = 0;
 
 public:
-	PacketWriter()
-		: PinOut(WritePin, false)
-	{}
+	PacketWriter(const uint8_t maxDataBytes, const uint8_t writePin)
+		: PinOut(writePin, false)
+		, MaxDataBytes(maxDataBytes)
+	{
+	}
 
 #if defined(PIM_USE_STATIC_CALLBACK)
 	void Start(void (*callback)(void))
@@ -63,6 +66,7 @@ public:
 #endif
 	{
 		Callback = callback;
+		SetupInterrupt();
 		Start();
 	}
 
@@ -146,6 +150,10 @@ public:
 			break;
 		}
 	}
+
+private:
+	// Defined in cpp.
+	void SetupInterrupt();
 
 private:
 	void PulseOut()

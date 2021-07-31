@@ -20,7 +20,6 @@ public:
 };
 #endif 
 
-template<const uint8_t MaxDataBytes, const uint8_t ReadPin>
 class PacketReader
 {
 private:
@@ -46,7 +45,10 @@ private:
 		WaitingForPacketClear,
 	};
 
-	volatile StateEnum State = StateEnum::WaitingForPreAmbleStart;
+	volatile StateEnum State = StateEnum::Blanking;
+
+	const uint8_t MaxDataBytes = 0;
+	const uint8_t ReadPin = 0;
 
 #if defined(PIM_USE_STATIC_CALLBACK)
 	void (*ReceiveCallback)(const uint32_t packetStartTimestamp) = nullptr;
@@ -56,33 +58,32 @@ private:
 #endif
 
 public:
-	PacketReader(uint8_t* incomingBuffer)
+	PacketReader(uint8_t* incomingBuffer, const uint8_t maxDataBytes, const uint8_t readPin)
 		: IncomingBuffer(incomingBuffer)
+		, MaxDataBytes(maxDataBytes)
+		, ReadPin(readPin)
 	{
-		pinMode(ReadPin, INPUT);
 	}
 
-#if defined(PIM_USE_STATIC_CALLBACK)
 	void Start(
+#if defined(PIM_USE_STATIC_CALLBACK)
 		void (*receiveCallback)(const uint32_t packetStartTimestamp),
 		void (*lostCallback)(const uint32_t packetStartTimestamp))
 	{
 		ReceiveCallback = receiveCallback;
 		LostCallback = lostCallback;
-		Start();
-	}
 #else
-	void Start(PacketReaderCallback* callback)
+		PacketReaderCallback* callback)
 	{
 		Callback = callback;
+#endif
+		SetupInterrupt();
 		Start();
 	}
-#endif
 
-	// Must perform interrupt attach before starting.
-	// attachInterrupt(digitalPinToInterrupt(ReadPin), OnPulse, RISING);
 	void Start()
 	{
+		Attach();
 		State = StateEnum::WaitingForPreAmbleStart;
 
 		// Make sure we don't return a previous size after it's been cleared.
@@ -116,13 +117,14 @@ public:
 
 	void Stop()
 	{
-		detachInterrupt(digitalPinToInterrupt(ReadPin));
 		BlankReceive();
 	}
 
 	// Blank receiving during 
 	void BlankReceive()
 	{
+		Detach();
+
 		if (State == StateEnum::WaitingForPacketClear)
 		{
 			State = StateEnum::BlankingWithPendingPacket;
@@ -133,7 +135,7 @@ public:
 		}
 	}
 
-	const bool HasIncoming(uint8_t& incomingSize)
+	const bool HasIncoming(uint8_t & incomingSize)
 	{
 		switch (State)
 		{
@@ -147,18 +149,22 @@ public:
 		}
 	}
 
-	// Returns false if in the middle of receiving a packet.
-	// Returns true the minimum silenceInterval has been observed.
-	const bool CanSend(const uint32_t silenceInterval)
+	// Has the writter blanked the reader?
+	const bool IsBlanking()
 	{
 		switch (State)
 		{
 		case StateEnum::Blanking:
 		case StateEnum::BlankingWithPendingPacket:
-			return false;
+			return true;
 		default:
-			return micros() - LastTimeStamp > silenceInterval;
+			return false;
 		}
+	}
+
+	const uint32_t GetLastTimeStamp()
+	{
+		return LastTimeStamp;
 	}
 
 	void OnPulse()
@@ -247,6 +253,7 @@ public:
 
 					if (IncomingIndex > (IncomingSize - 1))
 					{
+						Detach();
 						State = StateEnum::WaitingForPacketClear;
 #if defined(PIM_USE_STATIC_CALLBACK)
 #if !defined(PIM_NO_CHECKS)
@@ -302,6 +309,16 @@ public:
 		default:
 			break;
 		}
+	}
+
+private:
+	// Defined in cpp.
+	void Attach();
+	void SetupInterrupt();
+
+	void Detach()
+	{
+		detachInterrupt(digitalPinToInterrupt(ReadPin));
 	}
 
 private:
