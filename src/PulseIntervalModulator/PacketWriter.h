@@ -33,8 +33,8 @@ private:
 	enum WriteState
 	{
 		Done = 0,
-		WritingHeader = 2,
-		WritingDataBits = 3
+		WritingHeader = 1,
+		WritingDataBits = 2
 	};
 
 	volatile WriteState State = WriteState::Done;
