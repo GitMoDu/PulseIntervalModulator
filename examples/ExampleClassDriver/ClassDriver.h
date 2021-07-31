@@ -5,7 +5,7 @@
 
 #include <PulseIntervalModulator.h>
 
-template<const uint8_t MaxPacketSize, const uint8_t ReadPin, const uint8_t WritePin>
+template<const uint8_t MaxPacketSize>
 class ClassDriver : virtual public PacketReaderCallback, virtual public PacketWriterCallback
 {
 private:
@@ -13,46 +13,40 @@ private:
 	volatile bool PacketReceivedFlag = false;
 	volatile bool PacketSentFlag = false;
 
-	uint32_t IncomingStartTimestamp = 0;
-	const uint32_t MinimumSilenceInterval = 20000;
-	uint8_t IncomingPacket[Constants::MaxDataBytes];
+	volatile uint32_t IncomingStartTimestamp = 0;
 
-	PacketReader<MaxPacketSize, ReadPin> Reader;
-	PacketWriter<MaxPacketSize, WritePin> Writer;
+	uint8_t IncomingPacket[MaxPacketSize];
+
+	PacketReader Reader;
+	PacketWriter Writer;
 
 public:
 	uint8_t OutgoingPacket[MaxPacketSize];
 
 public:
-	ClassDriver()
+	ClassDriver(const uint8_t readPin, const uint8_t writePin)
 		: PacketReaderCallback()
 		, PacketWriterCallback()
-		, Reader(IncomingPacket)
-		, Writer()
+		, Reader(IncomingPacket, MaxPacketSize, readPin)
+		, Writer(MaxPacketSize, writePin)
 	{
 	}
 
-	void OnWriterInterrupt()
-	{
-		Writer.OnWriterInterrupt();
-	}
-
-	void OnReaderInterrupt()
-	{
-		Reader.OnPulse();
-	}
-
-	// Must perform interrupt attach before starting.
-	// attachInterrupt(digitalPinToInterrupt(ReadPin), OnPulse, RISING);
 	void Start()
 	{
 		Reader.Start(this);
 		Writer.Start(this);
 	}
 
+	void Stop()
+	{
+		Reader.Stop();
+		Writer.Stop();
+	}
+
 	const bool CanSend()
 	{
-		return Reader.CanSend(MinimumSilenceInterval);
+		return !Reader.IsBlanking();
 	}
 
 	// Must check with CanSend() right before this call.

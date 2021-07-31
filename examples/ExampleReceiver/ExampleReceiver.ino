@@ -2,17 +2,17 @@
 // Example of Receiver only with Reader.
 //
 
-
 #define DEBUG_LOG
-#define PIM_USE_STATIC_CALLBACK
+
+// #define PIM_USE_STATIC_CALLBACK must be enabled in Constants.
 
 #include <PulseIntervalModulator.h>
 
 const uint8_t ReadPin = 2;
-const uint8_t BufferSize = 64;
+const uint8_t BufferSize = 32;
 uint8_t IncomingBuffer[BufferSize];
 
-PacketReader<BufferSize, ReadPin> Reader(IncomingBuffer);
+PacketReader Reader(IncomingBuffer, BufferSize, ReadPin);
 
 volatile bool PacketLostFlag = false;
 volatile bool PacketReceivedFlag = false;
@@ -25,9 +25,7 @@ void setup()
 	Serial.begin(115200);
 #endif
 
-	// Attach interrupt before starting.
-	attachInterrupt(digitalPinToInterrupt(ReadPin), OnReaderPulse, RISING);
-	Reader.Start(OnPacketReceived, OnPacketLost);
+	Reader.Start(OnPacketReceivedInterrupt, OnPacketLostInterrupt);
 
 #ifdef DEBUG_LOG
 	Serial.println(F("ExampleReceiver Start."));
@@ -49,8 +47,9 @@ void loop()
 	{
 		PacketReceivedFlag = false;
 
-		uint8_t incomingSize = 0;
+		Serial.print(F("OnPacketReceived @"));
 
+		uint8_t incomingSize = 0;
 		if (Reader.HasIncoming(incomingSize))
 		{
 			// When packet is available.
@@ -74,20 +73,14 @@ void loop()
 	}
 }
 
-void OnPacketReceived(const uint32_t packetStartTimestamp)
+void OnPacketReceivedInterrupt(const uint32_t packetStartTimestamp)
 {
 	PacketReceivedFlag = true;
 	IncomingStartTimestamp = packetStartTimestamp;
 }
 
-void OnPacketLost(const uint32_t packetStartTimestamp)
+void OnPacketLostInterrupt(const uint32_t packetStartTimestamp)
 {
 	PacketLostFlag = true;
 	IncomingStartTimestamp = packetStartTimestamp;
 }
-
-void OnReaderPulse()
-{
-	Reader.OnPulse();
-}
-

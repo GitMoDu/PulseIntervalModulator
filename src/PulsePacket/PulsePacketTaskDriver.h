@@ -10,31 +10,35 @@
 #ifndef _EXAMPLEDRIVERCLASS_h
 #define _EXAMPLEDRIVERCLASS_h
 
-#define PIM_NO_CHECKS
 #include <PulseIntervalModulator.h>
 
 #define _TASK_OO_CALLBACKS
 #include <TaskSchedulerDeclarations.h>
 
-template<const uint8_t MaxPacketSize, const uint8_t ReadPin, const uint8_t WritePin, const uint32_t MinimumSilenceInterval = 20000>
-class PulsePacketTaskDriver : private Task, virtual public PacketReaderCallback, virtual public PacketWriterCallback
+
+template<const uint8_t MaxPacketSize>
+class PulsePacketTaskDriver : public Task, virtual public PacketReaderCallback, virtual public PacketWriterCallback
 {
 private:
 	struct InterruptFlagsType
 	{
-		bool PacketLost = false;
-		bool PacketReceived = false;
-		bool PacketSent = false;
+		volatile bool PacketLost = false;
+		volatile bool PacketReceived = false;
+		volatile bool PacketSent = false;
 	};
 
-	volatile InterruptFlagsType InterruptFlags;
+	InterruptFlagsType InterruptFlags;
 
-	uint32_t IncomingStartTimestamp = 0;
-	uint8_t IncomingPacket[Constants::MaxDataBytes];
-	uint8_t OutgoingPacket[Constants::MaxDataBytes];
+	PacketReader Reader;
+	PacketWriter Writer;
 
-	PacketReader<MaxPacketSize, ReadPin> Reader;
-	PacketWriter<MaxPacketSize, WritePin> Writer;
+protected:
+	volatile uint32_t IncomingStartTimestamp = 0;
+	volatile uint32_t LastWriterTimestamp = 0;
+	uint8_t IncomingPacket[MaxPacketSize];
+	uint8_t OutgoingPacket[MaxPacketSize];
+
+
 
 public:
 	// Virtual calls to be overriden.
@@ -45,12 +49,12 @@ public:
 	virtual void OnDriverPacketSent() {}
 
 public:
-	PulsePacketTaskDriver(Scheduler* scheduler)
+	PulsePacketTaskDriver(Scheduler* scheduler, const uint8_t readPin, const uint8_t writePin)
 		: Task(0, TASK_FOREVER, scheduler, false)
 		, PacketReaderCallback()
 		, PacketWriterCallback()
-		, Reader(IncomingPacket)
-		, Writer()
+		, Reader(IncomingPacket, MaxPacketSize, readPin)
+		, Writer(MaxPacketSize, writePin)
 		, InterruptFlags()
 	{}
 
@@ -78,6 +82,7 @@ public:
 		else if (InterruptFlags.PacketSent)
 		{
 			InterruptFlags.PacketSent = false;
+			LastWriterTimestamp = micros();
 			OnDriverPacketSent();
 		}
 		else
@@ -87,16 +92,6 @@ public:
 		}
 
 		return true;
-	}
-
-	void OnWriterInterrupt()
-	{
-		Writer.OnWriterInterrupt();
-	}
-
-	void OnReaderInterrupt()
-	{
-		Reader.OnPulse();
 	}
 
 	// Must perform interrupt attach before starting.
@@ -113,9 +108,14 @@ public:
 		Writer.Stop();
 	}
 
+	// Returns false if in the middle of receiving or sending a packet.
+	// Returns true the minimum silenceInterval has been observed in both ways.
 	const bool CanSend()
 	{
-		return Reader.CanSend(MinimumSilenceInterval);
+		uint32_t now = micros();
+		return !Reader.IsBlanking() // Has the writter blanked the reader?
+			&& (now - Reader.GetLastTimeStamp() > Constants::ReceiveSilenceInterval) // Has enough time passed since last pulse in?
+			&& (now - LastWriterTimestamp > Constants::SendSilenceInterval); // Has enough time passed since last pulse out?
 	}
 
 	// Must check with CanSend() right before this call.

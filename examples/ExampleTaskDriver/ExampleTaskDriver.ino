@@ -6,11 +6,11 @@
 
 #define DEBUG_LOG
 
-#include <PulsePacketTaskDriver.h>
-
 #define _TASK_OO_CALLBACKS
 #include <TaskScheduler.h>
 
+// #define PIM_USE_STATIC_CALLBACK must be disabled in Constants.
+#include <PulsePacketTaskDriver.h>
 
 // Process scheduler.
 Scheduler SchedulerBase;
@@ -19,7 +19,7 @@ const uint8_t MaxPacketSize = 32;
 const uint8_t ReadPin = 2;
 const uint8_t WritePin = 7;
 
-PulsePacketTaskDriver<MaxPacketSize, ReadPin, WritePin> Driver(&SchedulerBase);
+PulsePacketTaskDriver<MaxPacketSize> Driver(&SchedulerBase, ReadPin, WritePin);
 
 
 class SenderTask : public Task
@@ -27,12 +27,12 @@ class SenderTask : public Task
 private:
 	static const uint32_t SendPeriodMillis = 500;
 
-	PulsePacketTaskDriver<MaxPacketSize, ReadPin, WritePin>* PacketDriver = nullptr;
+	PulsePacketTaskDriver<MaxPacketSize>* PacketDriver = nullptr;
 
 	uint8_t Message[6] = { 'H', 'e', 'l', 'l', 'o', '!'};
 
 public:
-	SenderTask(Scheduler* scheduler, PulsePacketTaskDriver<MaxPacketSize, ReadPin, WritePin>* packetDriver)
+	SenderTask(Scheduler* scheduler, PulsePacketTaskDriver<MaxPacketSize>* packetDriver)
 		: Task(SendPeriodMillis, TASK_FOREVER, scheduler, false)
 		, PacketDriver(packetDriver)
 	{
@@ -51,7 +51,6 @@ void setup()
 	Serial.begin(115200);
 #endif
 
-	attachInterrupt(digitalPinToInterrupt(ReadPin), OnReaderPulse, RISING);
 	Driver.Start();
 
 	SenderTask.enable();
@@ -64,14 +63,4 @@ void setup()
 void loop()
 {
 	SchedulerBase.execute();
-}
-
-void OnReaderPulse()
-{
-	Driver.OnReaderInterrupt();
-}
-
-ISR(TIMER0_COMPA_vect)
-{
-	Driver.OnWriterInterrupt();
 }

@@ -2,22 +2,23 @@
 // Example of Sender only with Writer.
 //
 
-
 #define DEBUG_LOG
-#define PIM_USE_STATIC_CALLBACK
 
+//#define PIM_USE_STATIC_CALLBACK must be enabled in Constants.
 #include <PulseIntervalModulator.h>
 
 const uint8_t WritePin = 7;
-const uint8_t BufferSize = 5;
+const uint8_t BufferSize = 32;
+uint8_t OutgoingPacket[BufferSize];
 
-PacketWriter<BufferSize, WritePin> Writer;
+PacketWriter Writer(BufferSize, WritePin);
 
 volatile bool PacketSentFlag = false;
-uint8_t OutgoingPacket[BufferSize];
-const uint32_t SendPeriodMillis = 500;
+volatile uint32_t SentTimestamp = 0;
+
 uint32_t LastSent = 0;
 
+const uint32_t SendPeriodMillis = 500;
 
 void setup()
 {
@@ -41,7 +42,9 @@ void loop()
 #ifdef DEBUG_LOG
 		Serial.print(F("OnPacketSent @"));
 		Serial.print(micros());
-		Serial.println(F(" us"));
+		Serial.print(F(" us | Took "));
+		Serial.print(SentTimestamp);
+		Serial.println(F(" us to transmit."));
 #endif
 	}
 	else if (millis() - LastSent > SendPeriodMillis)
@@ -57,6 +60,7 @@ void loop()
 		// Fill in test data.
 		uint8_t Message[5] = { 'H', 'e','l', 'l', 'o' };
 
+		SentTimestamp = micros();
 		Writer.SendPacket(Message, 5);
 	}
 }
@@ -64,9 +68,5 @@ void loop()
 void OnPacketSentInterrupt()
 {
 	PacketSentFlag = true;
-}
-
-ISR(TIMER0_COMPA_vect)
-{
-	Writer.OnWriterInterrupt();
+	SentTimestamp = micros() - SentTimestamp;
 }
