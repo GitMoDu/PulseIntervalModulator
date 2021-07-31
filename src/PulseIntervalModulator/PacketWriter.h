@@ -158,7 +158,8 @@ private:
 private:
 	void PulseOut()
 	{
-		PinOut.PulseHigh();
+		PinOut = true;
+		PinOut = false;
 	}
 
 public:
