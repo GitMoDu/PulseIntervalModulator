@@ -21,6 +21,9 @@ Bit bangs out the packets using rolling Timer0 PWM interrupt on Channel A.
 Does not affect millis(), micros() or delay(). Channel B is still free.
 All work is done during interrupts.
 
+On AVR, depends on Fast for IO https ://github.com/GitMoDu/Fast
+as digitalWrite is too slow.
+
 ## Protocol
 
 - Initial pulse to start preamble.

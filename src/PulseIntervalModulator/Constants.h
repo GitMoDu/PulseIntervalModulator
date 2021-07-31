@@ -10,9 +10,21 @@
 // Remove checks for a faster operation, once flow is validated.
 #define PIM_SAFETY_CHECKS
 
+// Use optimized AVR Fast IO library, if device is AVR.
+#if defined(ARDUINO_ARCH_AVR)
+#define PIM_USE_FAST
+#include <Fast.h>
+#if !defined(_FAST_h)
+#error Gotta go fast! (.h)
+#error Arduino digitalWrite is too slow.
+#error Depends on Fast for IO https ://github.com/GitMoDu/Fast
+#endif
+#endif
+
+
 #include <stdint.h>
 
-class Constants 
+class Constants
 {
 public:
 	static const uint8_t MinDataBytes = 1; // 0b000000

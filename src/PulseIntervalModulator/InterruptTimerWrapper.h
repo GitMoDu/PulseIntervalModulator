@@ -12,6 +12,7 @@
 #endif	
 
 #include <Arduino.h>
+
 // This class should re-use the same timer used for the natives "micros()" call.
 class InterruptTimerWrapper
 {
