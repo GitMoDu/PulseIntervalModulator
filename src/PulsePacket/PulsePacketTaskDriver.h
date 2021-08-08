@@ -38,7 +38,7 @@ protected:
 	uint8_t IncomingPacket[MaxPacketSize];
 	uint8_t OutgoingPacket[MaxPacketSize];
 
-public:
+protected:
 	// Virtual calls to be overriden.
 	virtual void OnDriverPacketReceived(const uint32_t startTimestamp, const uint8_t packetSize) {}
 
