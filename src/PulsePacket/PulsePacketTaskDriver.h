@@ -27,18 +27,16 @@ private:
 		volatile bool PacketSent = false;
 	};
 
-	InterruptFlagsType InterruptFlags;
-
 	PacketReader Reader;
 	PacketWriter Writer;
+
+	InterruptFlagsType InterruptFlags;
 
 protected:
 	volatile uint32_t IncomingStartTimestamp = 0;
 	volatile uint32_t LastWriterTimestamp = 0;
 	uint8_t IncomingPacket[MaxPacketSize];
 	uint8_t OutgoingPacket[MaxPacketSize];
-
-
 
 public:
 	// Virtual calls to be overriden.
@@ -50,9 +48,9 @@ public:
 
 public:
 	PulsePacketTaskDriver(Scheduler* scheduler, const uint8_t readPin, const uint8_t writePin)
-		: Task(0, TASK_FOREVER, scheduler, false)
-		, PacketReaderCallback()
+		: PacketReaderCallback()
 		, PacketWriterCallback()
+		, Task(0, TASK_FOREVER, scheduler, false)
 		, Reader(IncomingPacket, MaxPacketSize, readPin)
 		, Writer(MaxPacketSize, writePin)
 		, InterruptFlags()
