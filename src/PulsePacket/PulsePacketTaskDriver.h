@@ -50,12 +50,12 @@ public:
 
 public:
 	PulsePacketTaskDriver(Scheduler* scheduler, const uint8_t readPin, const uint8_t writePin)
-		: PacketReaderCallback()
+		: Task(0, TASK_FOREVER, scheduler, false)
+		, PacketReaderCallback()
 		, PacketWriterCallback()
-		, Task(0, TASK_FOREVER, scheduler, false)
-		, InterruptFlags()
 		, Reader(IncomingPacket, MaxPacketSize, readPin)
 		, Writer(MaxPacketSize, writePin)
+		, InterruptFlags()
 	{}
 
 	bool Callback()
