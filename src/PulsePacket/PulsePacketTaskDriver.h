@@ -46,6 +46,12 @@ protected:
 
 	virtual void OnDriverPacketSent() {}
 
+	virtual const bool OnDriverService()
+	{
+		Task::disable();
+		return false;
+	}
+
 public:
 #if defined(ARDUINO_ARCH_AVR)
 	PulsePacketTaskDriver(Scheduler* scheduler, const uint8_t readPin, const uint8_t writePin)
@@ -93,8 +99,7 @@ public:
 		}
 		else
 		{
-			Task::disable();
-			return false;
+			return OnDriverService();
 		}
 
 		return true;
