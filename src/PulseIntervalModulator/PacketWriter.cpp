@@ -11,9 +11,19 @@ ISR(TIMER0_COMPA_vect)
 {
 	PulseIntervalModulatorWriter->OnWriterInterrupt();
 }
-#endif
 
 void PacketWriter::SetupInterrupt()
 {
 	PulseIntervalModulatorWriter = this;
 }
+#elif defined(ARDUINO_ARCH_STM32F1)
+void OnWriterTimerInterrupt()
+{
+	PulseIntervalModulatorWriter->OnWriterInterrupt();
+}
+
+void PacketWriter::SetupInterrupt()
+{
+	TimerWrapper.ConfigureTimer(OnWriterTimerInterrupt);
+}
+#endif

@@ -13,76 +13,91 @@
 
 #if defined(ARDUINO_ARCH_STM32F1)
 #include <Arduino.h>
-// This class should re-use the same timer used for the natives "micros()" call.
+#include <HardwareTimer.h>
+
+#include "PulseIntervalModulator\Constants.h"
+
 class InterruptTimerWrapper
 {
 private:
-	enum InterruptDuration
-	{
-		PreAmble = 10,
-		Zero = 4,
-		One = 7
-	};
-public:
+	static const uint32_t TimerRange = UINT16_MAX;
+	static const uint32_t TimerPeriodMicros = 500000;
 
-	static void DetachInterrupt()
+	HardwareTimer WriterTimer;
+
+	const uint8_t TimerIndex;
+	const uint8_t TimerChannelIndex;
+
+	void (*Callback)(void) = nullptr;
+
+public:
+	InterruptTimerWrapper(const uint8_t timerIndex, const uint8_t timerChannelIndex)
+		: WriterTimer(timerIndex)
+		, TimerIndex(timerIndex)
+		, TimerChannelIndex(timerChannelIndex)
 	{
 	}
 
-	static void ConfigureTimer()
+	void DetachInterrupt()
 	{
-		// Set 
+		WriterTimer.detachInterrupt(TimerChannelIndex);
+	}
+
+	void ConfigureTimer(void (*callback)(void))
+	{
+		Callback = callback;
 		noInterrupts();
+
+		WriterTimer.pause();
+		WriterTimer.setPeriod(50000);
+
+
+		WriterTimer.setChannel1Mode(TIMER_OUTPUT_COMPARE);
+		WriterTimer.setCompare(TimerChannelIndex, UINT16_MAX);
 
 		interrupts();
 	}
 
-	static void AttachInterrupt()
+	void AttachInterrupt()
 	{
-		DetachInterrupt();
-		ConfigureTimer();
-#if defined(ARDUINO_AVR_ATTINYX5)
-		TIMSK &= ~(1 << OCIE0A);
-#elif defined(ARDUINO_ARCH_AVR)
-		TIMSK0 &= ~(1 << OCIE0A);
-#endif
+		WriterTimer.attachInterrupt(TimerChannelIndex, Callback);
+
+		// Delay the first interrupt.
+		WriterTimer.setCompare(TimerChannelIndex, UINT16_MAX);
+		// Refresh the timer's count, prescale, and overflow
+		WriterTimer.refresh();
 	}
 
-	static void InterruptAfterOne()
+	void InterruptAfterMicros(const uint16_t durationMicros)
 	{
-		InterruptAfterClocks((uint8_t)InterruptDuration::One);
+		const uint32_t clocks = (((uint32_t)WriterTimer.getOverflow() * durationMicros) / TimerPeriodMicros);
+		const uint32_t clocksPruned = ((uint32_t)WriterTimer.getCount() + clocks) % WriterTimer.getOverflow();
+
+		WriterTimer.setCompare(TimerChannelIndex, clocksPruned);
+		// Start the timer counting
+		WriterTimer.resume();
 	}
 
-	static void InterruptAfterZero()
+	void InterruptAfterOne()
 	{
-		InterruptAfterClocks((uint8_t)InterruptDuration::Zero);
+		InterruptAfterMicros(Constants::OneInterval);
 	}
 
-	static void InterruptAfterClocks(const uint8_t clocks)
+	void InterruptAfterZero()
 	{
-#if defined(ARDUINO_AVR_ATTINYX5)
-		// Clear the interrupt flag while we setup the next one.
-
-		// Set the new compare vale.
-
-		// Enable interrupt.
-		// 
-		// Clear the interrupt flag while we setup the next one.
-
-		// Set the new compare vale.
-
-		// Enable interrupt.
-#endif
+		InterruptAfterMicros(Constants::ZeroInterval);
 	}
 
-	static void InterruptAfterPreamble()
+	void InterruptAfterPreamble()
 	{
-		InterruptAfterClocks((uint8_t)InterruptDuration::PreAmble);
+		InterruptAfterMicros(Constants::PreambleInterval);
 	}
 };
+#undef DeviceTimer
 #elif defined(ARDUINO_ARCH_AVR)
 #include <Arduino.h>
-// This class should re-use the same timer used for the natives "micros()" call.
+// This class re-uses the same timer used for the native "micros()" call,
+// by taking over OCR0A.
 class InterruptTimerWrapper
 {
 private:

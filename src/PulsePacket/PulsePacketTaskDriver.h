@@ -17,7 +17,7 @@
 
 
 template<const uint8_t MaxPacketSize>
-class PulsePacketTaskDriver : public Task, virtual public PacketReaderCallback, virtual public PacketWriterCallback
+class PulsePacketTaskDriver : protected Task, virtual public PacketReaderCallback, virtual public PacketWriterCallback
 {
 private:
 	struct InterruptFlagsType
@@ -47,12 +47,20 @@ protected:
 	virtual void OnDriverPacketSent() {}
 
 public:
+#if defined(ARDUINO_ARCH_AVR)
 	PulsePacketTaskDriver(Scheduler* scheduler, const uint8_t readPin, const uint8_t writePin)
+#elif defined(ARDUINO_ARCH_STM32F1)
+	PulsePacketTaskDriver(Scheduler* scheduler, const uint8_t readPin, const uint8_t writePin, const uint8_t timerIndex, const uint8_t timerChannel)
+#endif
 		: PacketReaderCallback()
 		, PacketWriterCallback()
 		, Task(0, TASK_FOREVER, scheduler, false)
 		, Reader(IncomingPacket, MaxPacketSize, readPin)
+#if defined(ARDUINO_ARCH_AVR)
 		, Writer(MaxPacketSize, writePin)
+#elif defined(ARDUINO_ARCH_STM32F1)
+		, Writer(MaxPacketSize, writePin, timerIndex, timerChannel)
+#endif
 		, InterruptFlags()
 	{}
 

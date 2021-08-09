@@ -54,14 +54,23 @@ private:
 	PacketWriterCallback* Callback = nullptr;
 #endif
 
+	InterruptTimerWrapper TimerWrapper;
+
 	const uint8_t MaxDataBytes = 0;
 
 public:
+#if defined(ARDUINO_ARCH_AVR)
 	PacketWriter(const uint8_t maxDataBytes, const uint8_t writePin)
 #if defined(PIM_USE_FAST)
 		: PinOut(writePin, false)
 #else
 		: WritePin(writePin)
+#endif
+		, TimerWrapper()
+#elif defined(ARDUINO_ARCH_STM32F1)
+	PacketWriter(const uint8_t maxDataBytes, const uint8_t writePin, const uint8_t timerIndex, const uint8_t timerChannel)
+		: WritePin(writePin)
+		, TimerWrapper(timerIndex, timerChannel)
 #endif
 		, MaxDataBytes(maxDataBytes)
 	{
@@ -80,7 +89,7 @@ public:
 		pinMode(WritePin, OUTPUT);
 		digitalWrite(WritePin, LOW);
 #endif
-		
+
 		SetupInterrupt();
 		Start();
 	}
@@ -88,13 +97,13 @@ public:
 	void Start()
 	{
 		State = WriteState::Done;
-		InterruptTimerWrapper::AttachInterrupt();
+		TimerWrapper.AttachInterrupt();
 	}
 
 	void Stop()
 	{
 		State = WriteState::Done;
-		InterruptTimerWrapper::DetachInterrupt();
+		TimerWrapper.DetachInterrupt();
 	}
 
 	void OnWriterInterrupt()
@@ -114,18 +123,18 @@ public:
 				Callback->OnPacketSent();
 #endif
 			}
-			InterruptTimerWrapper::DetachInterrupt();
+			TimerWrapper.DetachInterrupt();
 			break;
 		case WriteState::WritingHeader:
 			// Sending header with packet size MSB first.
 			// Remove MinDataBytes, according to specification.
 			if ((PacketSize - Constants::MinDataBytes) & (1 << (Constants::HeaderBits - 1 - RawOutputBit)))
 			{
-				InterruptTimerWrapper::InterruptAfterOne();
+				TimerWrapper.InterruptAfterOne();
 			}
 			else
 			{
-				InterruptTimerWrapper::InterruptAfterZero();
+				TimerWrapper.InterruptAfterZero();
 			}
 			RawOutputBit++;
 
@@ -140,11 +149,11 @@ public:
 			// Sending data with MSB first.
 			if ((RawOutputData[RawOutputByte] >> (7 - RawOutputBit)) & 0x01)
 			{
-				InterruptTimerWrapper::InterruptAfterOne();
+				TimerWrapper.InterruptAfterOne();
 			}
 			else
 			{
-				InterruptTimerWrapper::InterruptAfterZero();
+				TimerWrapper.InterruptAfterZero();
 			}
 			RawOutputBit++;
 
@@ -202,7 +211,7 @@ public:
 		// PreAmble and Packet start sequence.
 		State = WriteState::WritingHeader;
 		PulseOut();
-		InterruptTimerWrapper::InterruptAfterPreamble();
+		TimerWrapper.InterruptAfterPreamble();
 	}
 };
 #endif
