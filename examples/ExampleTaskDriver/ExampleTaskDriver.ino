@@ -19,7 +19,10 @@ const uint8_t MaxPacketSize = 32;
 const uint8_t ReadPin = 2;
 const uint8_t WritePin = 7;
 
-PulsePacketTaskDriver<MaxPacketSize> Driver(&SchedulerBase, ReadPin, WritePin);
+static const uint8_t TimerIndex = 1;// Timer 1 does not conflict with SPI.
+static const uint8_t TimerChannelIndex = TIMER_CH1; // Pin (D27) PA8. 
+
+PulsePacketTaskDriver<MaxPacketSize> Driver(&SchedulerBase, ReadPin, WritePin, TimerIndex, TimerChannelIndex);
 
 
 class SenderTask : public Task
@@ -29,7 +32,7 @@ private:
 
 	PulsePacketTaskDriver<MaxPacketSize>* PacketDriver = nullptr;
 
-	uint8_t Message[6] = { 'H', 'e', 'l', 'l', 'o', '!'};
+	uint8_t Message[6] = { 'H', 'e', 'l', 'l', 'o', '!' };
 
 public:
 	SenderTask(Scheduler* scheduler, PulsePacketTaskDriver<MaxPacketSize>* packetDriver)
@@ -41,6 +44,8 @@ public:
 	bool Callback()
 	{
 		PacketDriver->SendPacket(Message, 6);
+
+		return true;
 	}
 } SenderTask(&SchedulerBase, &Driver);
 
