@@ -1,6 +1,6 @@
 # Pulse Interval Modulator
 
-Arduino based Pulse Interval Modulator/Demodulator.
+Arduino based Differential Pulse Position Modulator/Demodulator.
 
 Encodes/Decodes a simple custom protocol based on the interval between pulses.
 
